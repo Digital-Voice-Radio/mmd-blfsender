@@ -1,4 +1,4 @@
-# MMD Sender PBX
+# MMD BLF/Phonebook Sender for PBX
 
 ## MultiMode Dashboard Sender for AMI DeviceState
 
