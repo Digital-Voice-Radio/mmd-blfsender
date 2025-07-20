@@ -48,4 +48,6 @@ CONFIG = {
           }
 }
 ```
-If you want to send a full address book and display names from your FreePBX Usermon enable mysql and set the database login credentials to match your `asterisk` database.  
+If you want to send a full address book and display names from your FreePBX Usermon enable mysql and set the database login credentials to allow access to your FreePBX `asterisk` database.  
+
+mmblfsender only requires select access to your 
