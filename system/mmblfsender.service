@@ -1,0 +1,22 @@
+[Unit]
+Description=MultiMode Dashboard BLF Sender
+After=network.target 
+
+[Service]
+ExecStart=/opt/mmblfsender/bin/python /opt/mmblfsender/sender.py
+WorkingDirectory=/opt/mmblfsender
+KillMode=process
+Restart=on-failure
+Type=exec
+PIDFile=/run/mmblfsender/sender.pid
+
+TimeoutStopSec=0
+Restart=always
+User=www-data
+Group=www-data
+RuntimeDirectory=mmblfsender
+RuntimeDirectoryMode=2755
+
+
+[Install]
+WantedBy=multi-user.target
