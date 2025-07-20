@@ -12,7 +12,7 @@ from config import CONFIG
 #Got {"Event": "ExtensionStatus", "Privilege": "call,all", "Exten": "61282", "Context": "ext-local", "Hint": "PJSIP/61282&Custom:DND61282,CustomPresence:61282", "Status": "0", "StatusText": "Idle"}
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('mmblf')
 
 def is_ext_published(ext):
     if ext.isnumeric():
@@ -24,7 +24,7 @@ def is_ext_published(ext):
     return False
 
 async def websocket_sender(queue, ws):
-    logger.info("mmblf:cue:conn: Starting Websocket Sender")
+    logger.info("cue:conn: Starting Websocket Sender")
     while True:
         while True:
             ev = None
@@ -37,15 +37,15 @@ async def websocket_sender(queue, ws):
 
             if ev is not None:
                 if ev.get('_data') not in [ 'PING', 'PONG', ]:
-                    logger.debug(f"mmblf:wsc:send: {ev}")
+                    logger.debug(f"wsc:send: {ev}")
                 send = await ws.send_str(json.dumps(ev))
                 queue.task_done()
 
-        logger.critical("mmblf:wsc:connect: Disconnected")
+        logger.critical("wsc:connect: Disconnected")
 
 
 async def websocket_reader(ws):
-    logger.info("mmblf:wsr:conn: Starting Websocket Reader")
+    logger.info("wsr:conn: Starting Websocket Reader")
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
             data = json.loads(msg.data)
@@ -54,11 +54,11 @@ async def websocket_reader(ws):
             elif data.get('_data') == 'PING':
                 await ws.send_str(json.dumps({'_data': 'PONG'}))
             else:
-                logger.warning(f"mmblf:wsr:recv: Unknown packet {msg.data}")
+                logger.warning(f"wsr:recv: Unknown packet {msg.data}")
         elif msg.type == aiohttp.WSMsgType.ERROR:
             break
 
-    logger.critical("mmblf:wsr:conn: Websocket Reader has closed.")
+    logger.critical("wsr:conn: Websocket Reader has closed.")
 
     loop = asyncio.get_event_loop()
     loop.stop()
@@ -97,13 +97,13 @@ async def process_event(e, ami, queue):
     data = None
 
     if evt == 'FullyBooted':
-        logger.info('mmblf:ami:conn: Successfully Connected')
+        logger.info('ami:conn: Successfully Connected')
 
     elif evt in ['DeviceStateChange']:
         data = await do_DeviceStateChange(queue, e)
 
     if data is not None:
-        #print(f'mmblf:queue:put: {data}')
+        #print(f'queue:put: {data}')
         await queue.put(data)
 
 
@@ -118,17 +118,17 @@ async def ami_listener(ami, queue):
 
         try:
 
-            logger.info(f"mmblf:ami:conn: Connecting to AMI 127.0.0.1 5038 {CONFIG['username']}")
+            logger.info(f"ami:conn: Connecting to AMI 127.0.0.1 5038 {CONFIG['username']}")
             await ami.connect_ami()
-            logger.critical('mmblf:ami:conn: Disconnected From AMI')
+            logger.critical('ami:conn: Disconnected From AMI')
         except Exception as e:
-            logger.error(f'mmblf:ami:error {e}')
+            logger.error(f'ami:error {e}')
 
 
 
 
 async def send_ping(queue):
-    logger.info('mmblf:png:task: Starting pinger')
+    logger.info('png:task: Starting pinger')
     while True:
         await queue.put({'_data': 'PING'})
         await asyncio.sleep(10)
@@ -145,7 +145,7 @@ async def ami_populate(ami, queue):
         await asyncio.sleep(60)
 
 async def database_sender(cnx, queue):
-    logger.info('mmblf:fpx:conn: Starting Database Sender')
+    logger.info('fpx:conn: Starting Database Sender')
     while True:
         if cnx and cnx.is_connected():
             with cnx.cursor() as cursor:
@@ -180,7 +180,7 @@ async def launch():
     ws = await session.ws_connect(CONFIG['dashboard_rx'])
 
     if CONFIG['mysql']['enabled']:
-        logger.info('mmblf:fpx:conn: Connecting to MySQL')
+        logger.info('fpx:conn: Connecting to MySQL')
         cnx = mysql.connector.connect(user=CONFIG['mysql']['user'], password=CONFIG['mysql']['password'],
                               host=CONFIG['mysql']['host'],
                               database=CONFIG['mysql']['database'])
