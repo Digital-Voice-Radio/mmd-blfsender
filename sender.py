@@ -67,7 +67,8 @@ async def websocket_reader(ws):
 async def do_DeviceStateChange(queue, e):
 
     device = e.get('Device')
-    if device[:5] in ['IAX', 'PJSIP']:
+    if device[:4] in ['IAX/', 'PJSI']:
+        logger.info(e)
         chn, ext = device.split('/')
         state = e.get('State')
         include = False
