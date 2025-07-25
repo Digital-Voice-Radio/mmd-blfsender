@@ -67,9 +67,12 @@ async def websocket_reader(ws):
 async def do_DeviceStateChange(queue, e):
 
     device = e.get('Device')
-    if device[:4] in ['IAX/', 'PJSI']:
+    if device[:4] in ['IAX2/', 'PJSI', 'conf']:
         logger.info(e)
-        chn, ext = device.split('/')
+        if device[:4] == 'conf':
+            chn, ext = device.split(':')
+        else:
+            chn, ext = device.split('/')
         state = e.get('State')
         include = False
 
@@ -85,6 +88,9 @@ async def do_DeviceStateChange(queue, e):
             include = False
         elif device in CONFIG['trunks']:
             data['DeviceType'] = 'trunk'
+            include = True
+        elif device in CONFIG['services']:
+            data['DeviceType'] = 'service'
             include = True
         elif is_ext_published(ext):
             include = True
@@ -150,9 +156,9 @@ async def database_sender(cnx, queue):
     while True:
         if cnx and cnx.is_connected():
             with cnx.cursor() as cursor:
-                result = cursor.execute("SELECT username,default_extension, primary_group, displayname FROM userman_users")
+                result = cursor.execute("SELECT username,default_extension, title,primary_group, displayname FROM userman_users")
                 rows = cursor.fetchall()
-                for (username,default_extension, primary_group, displayname) in rows:
+                for (username,default_extension, title, primary_group, displayname) in rows:
                     #print(username,default_extension, primary_group, displayname) 
                     if ' ' in displayname:
                         (call, name) = displayname.split(' ', 1)
@@ -160,10 +166,17 @@ async def database_sender(cnx, queue):
                         name = displayname
                         call = ""
                     if is_ext_published(username):
+                        st = 'UNKNOWN'
+                        dt = 'extension'
+                        if username in CONFIG['services'] or title == 'service':
+                            dt = 'service'
+                            st = 'UNMONITORED'
                         await queue.put({'_data': 'phonebook',
                                    'extension': username,
                                    'displayname': name,
                                    'callsign': call,
+                                   'devicetype': dt,
+                                   'state': st
                         })
 
         await asyncio.sleep(600)
