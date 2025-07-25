@@ -2,12 +2,15 @@
 #
 #
 LOG=/tmp/mmblfsender-install.log
-echo ┏┳┓┏┳┓╺┳┓┏━┓┏━╸┏┓╻╺┳┓┏━╸┏━┓   ┏┓ ╻  ┏━╸
-echo ┃┃┃┃┃┃ ┃┃┗━┓┣╸ ┃┗┫ ┃┃┣╸ ┣┳┛╺━╸┣┻┓┃  ┣╸ 
-echo ╹ ╹╹ ╹╺┻┛┗━┛┗━╸╹ ╹╺┻┛┗━╸╹┗╸   ┗━┛┗━╸╹ 
+echo "┏┳┓┏┳┓╺┳┓┏━┓┏━╸┏┓╻╺┳┓┏━╸┏━┓   ┏┓ ╻  ┏━╸"
+echo "┃┃┃┃┃┃ ┃┃┗━┓┣╸ ┃┗┫ ┃┃┣╸ ┣┳┛╺━╸┣┻┓┃  ┣╸ "
+echo "╹ ╹╹ ╹╺┻┛┗━┛┗━╸╹ ╹╺┻┛┗━╸╹┗╸   ┗━┛┗━╸╹  "
 echo
 echo Verbose Output logged to $LOG
 echo Install Started > ${LOG}
+
+echo Pulling latest updates from git...
+git pull >> $LOG
 
 if [ ! -d /opt/mmblfsender ]
 then
