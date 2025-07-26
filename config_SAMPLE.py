@@ -4,7 +4,8 @@ CONFIG = {
           'password': '***PASSWORD***',
           'dashboard_rx': 'wss://mmd.dvdmr.org/rx',
           'service_exchange': 'world.nzsip.nz',
-          'trunks': [ 'PJSIP/nzsip', ],
+          'trunks': {
+              'PJSIP/nzsip': ( 'ignored', 'CALLSIGN', 'Display Name', ),
           'extensions': [ (60000,69999), ],
           'mysql': {
               'enabled': True,

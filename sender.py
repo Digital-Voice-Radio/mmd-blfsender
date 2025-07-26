@@ -86,7 +86,7 @@ async def do_DeviceStateChange(queue, e):
 
         if state == 'INVALID':
             include = False
-        elif device in CONFIG['trunks']:
+        elif device in CONFIG['trunks'].keys():
             data['DeviceType'] = 'trunk'
             include = True
         elif device in CONFIG['services']:
@@ -154,17 +154,29 @@ async def ami_populate(ami, queue):
 async def database_sender(cnx, queue):
     logger.info('fpx:conn: Starting Database Sender')
     while True:
+        for k,v in CONFIG.get('trunks').items():
+            await queue.put({'_data': 'phonebook',
+                       'exchange': CONFIG.get('service_exchange'),
+                       'extension': v[0],
+                       'device': k,
+                       'displayname': v[2],
+                       'callsign': v[1],
+                       'devicetype': 'trunk',
+                       'state': 'UNMONITORED',
+            })
+
         if cnx and cnx.is_connected():
             with cnx.cursor() as cursor:
                 result = cursor.execute("SELECT username,default_extension, title,primary_group, displayname FROM userman_users")
                 rows = cursor.fetchall()
                 for (username,default_extension, title, primary_group, displayname) in rows:
-                    #print(username,default_extension, primary_group, displayname) 
+                    logger.info(f'{username},{default_extension},{displayname},{title},{primary_group})')
                     if ' ' in displayname:
                         (call, name) = displayname.split(' ', 1)
                     else:
                         name = displayname
                         call = ""
+
                     if is_ext_published(username):
                         st = 'UNKNOWN'
                         dt = 'extension'
@@ -172,13 +184,15 @@ async def database_sender(cnx, queue):
                             dt = 'service'
                             st = 'UNMONITORED'
                         await queue.put({'_data': 'phonebook',
+                                   'exchange': CONFIG.get('service_exchange'),
                                    'extension': username,
                                    'displayname': name,
                                    'callsign': call,
                                    'devicetype': dt,
                                    'state': st
                         })
-
+        else:
+            logger.info('fpx:conn: Not connected to mysql?')
         await asyncio.sleep(600)
 
 
