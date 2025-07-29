@@ -67,12 +67,14 @@ async def websocket_reader(ws):
 async def do_DeviceStateChange(queue, e):
 
     device = e.get('Device')
-    if device[:4] in ['IAX2/', 'PJSI', 'conf']:
+    logger.info(f"{device}, {device[:4]}")
+    if device[:4] in ['IAX2', 'PJSI', 'conf']:
         logger.info(e)
         if device[:4] == 'conf':
             chn, ext = device.split(':')
         else:
             chn, ext = device.split('/')
+
         state = e.get('State')
         include = False
 
@@ -81,21 +83,26 @@ async def do_DeviceStateChange(queue, e):
             'Service': ext,
             'Device': device,
             'State': state,
-            'DeviceType': 'extension'
+            'DeviceType': 'extension',
+            'exchange': CONFIG.get('service_exchange'),
         }
 
         if state == 'INVALID':
             include = False
+
         elif device in CONFIG['trunks'].keys():
             data['DeviceType'] = 'trunk'
             include = True
+
         elif device in CONFIG['services']:
             data['DeviceType'] = 'service'
             include = True
+
         elif is_ext_published(ext):
             include = True
 
         if include:
+            logger.info(data)
             return data
 
 async def process_event(e, ami, queue):
@@ -107,10 +114,14 @@ async def process_event(e, ami, queue):
         logger.info('ami:conn: Successfully Connected')
 
     elif evt in ['DeviceStateChange']:
+        logger.info(e)
         data = await do_DeviceStateChange(queue, e)
 
+    elif evt in ['ExtensionStatus']:
+        logger.info(e)
+
     if data is not None:
-        #print(f'queue:put: {data}')
+        logger.info(f'queue:put: {data}')
         await queue.put(data)
 
 
@@ -155,7 +166,7 @@ async def database_sender(cnx, queue):
     logger.info('fpx:conn: Starting Database Sender')
     while True:
         for k,v in CONFIG.get('trunks').items():
-            await queue.put({'_data': 'phonebook',
+            d = {'_data': 'phonebook',
                        'exchange': CONFIG.get('service_exchange'),
                        'extension': v[0],
                        'device': k,
@@ -163,7 +174,9 @@ async def database_sender(cnx, queue):
                        'callsign': v[1],
                        'devicetype': 'trunk',
                        'state': 'UNMONITORED',
-            })
+            }
+            logger.info(d)
+            await queue.put(d)
 
         if cnx and cnx.is_connected():
             with cnx.cursor() as cursor:
